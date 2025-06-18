@@ -1,3 +1,4 @@
+## Required Libraries
 install.packages(c("quantmod", "PerformanceAnalytics", "caret", "glmnet", "xgboost", "nnet", "rpart"))
 library(quantmod)
 library(PerformanceAnalytics)
@@ -6,11 +7,14 @@ library(glmnet)
 library(xgboost)
 library(nnet)
 library(rpart)
+
+## Download Stock Data
 symbols <- c("AAPL", "MSFT", "GOOG", "AMZN", "META")
 getSymbols(symbols, from = "2018-01-01", to = "2023-12-31")
 prices <- do.call(merge, lapply(symbols, function(sym) Cl(get(sym))))
 returns <- na.omit(ROC(prices, type = "discrete"))
-# Create lagged returns as features
+
+## Create lagged returns as features
 features <- na.omit(merge(
   lag(returns, 1),
   lag(returns, 2),
@@ -20,14 +24,21 @@ colnames(features) <- paste0(rep(symbols, each = 3), "_Lag", rep(1:3, times = le
 target <- returns[, "AAPL"]  # Predicting AAPL next-day return
 dataset <- na.omit(merge(features, target))
 colnames(dataset)[ncol(dataset)] <- "target"
+
+## Train/Test Split                                
 train_idx <- 1:floor(0.8 * nrow(dataset))
 train_data <- dataset[train_idx, ]
 test_data <- dataset[-train_idx, ]
+
+## Train Models
+## Interpretable LASSO                                
 x_train <- as.matrix(train_data[, -ncol(train_data)])
 y_train <- train_data$target
 
 lasso_model <- cv.glmnet(x_train, y_train, alpha = 1)
 lasso_pred <- predict(lasso_model, as.matrix(test_data[, -ncol(test_data)]), s = "lambda.min")
+
+                                
 tree_model <- rpart(target ~ ., data = as.data.frame(train_data), method = "anova")
 tree_pred <- predict(tree_model, newdata = as.data.frame(test_data))
 dtrain <- xgb.DMatrix(data = x_train, label = y_train)
