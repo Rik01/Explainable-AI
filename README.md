@@ -4,4 +4,4 @@
 
 2. Fit: Your EdTech & hedge fund firm (trust + transparency)
 
-Bonus: Publishable in top finance and ML journals
+Goal: Publishable in top AAA finance and ML journals
